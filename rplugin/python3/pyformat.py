@@ -38,7 +38,7 @@ class PyformatNvim:
         return options
 
     @pynvim.command(
-        "PyFormat",
+        "PyFormatSync",
         range="%",
         sync=True,
     )
