@@ -3,14 +3,34 @@ from typing import Union
 
 import pynvim
 
+import_error = False
+
+try:
+    import isort
+except ImportError:
+    import_error = True
+    print(
+        "isort is not installed in your g:python3_host_prog",
+        file=sys.stderr,
+    )
+
 try:
     import black
-    import isort
     from black.const import DEFAULT_LINE_LENGTH
     from black.parsing import InvalidInput
     from black.report import NothingChanged
 except ImportError:
-    # TODO: ImportError
+    import_error = True
+    print(
+        "black is not installed in your g:python3_host_prog",
+        file=sys.stderr,
+    )
+
+if import_error:
+    print(
+        "Make sure all required dependencies are installed and try again",
+        file=sys.stderr,
+    )
     sys.exit(1)
 
 
@@ -52,6 +72,10 @@ class PyformatNvim:
         range="%",
     )
     def format(self, range):
+        if self.nvim.current.buffer.options.get("filetype") != "python":
+            self.nvim.err_write("Buffer filetype is not python\n")
+            return
+
         buf = "\n".join(self.nvim.current.buffer[range[0] - 1 : range[1]])
 
         opts = self.isort_opts()
@@ -72,6 +96,7 @@ class PyformatNvim:
         except NothingChanged:
             return
         except InvalidInput:
+            self.nvim.err_write("black: Invalid input\n")
             return
 
         cursor = self.nvim.current.window.cursor
