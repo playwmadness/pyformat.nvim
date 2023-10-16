@@ -34,7 +34,7 @@ Call `:PyFormat` to format current buffer.
 
 Alternatively there is synchronous `:PyFormatSync` which can be used with autocmd like 
 ```vim
-au BufWritePre *.py,*.pyi PyFormatSync
+au BufWritePre *.py,*.pyi silent! PyFormatSync
 ```
 to format your python files before writing them
 
