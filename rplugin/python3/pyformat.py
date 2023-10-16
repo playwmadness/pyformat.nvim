@@ -6,6 +6,7 @@ import pynvim
 try:
     import black
     import isort
+    from black.const import DEFAULT_LINE_LENGTH
     from black.parsing import InvalidInput
     from black.report import NothingChanged
 except ImportError:
@@ -21,6 +22,7 @@ class PyformatNvim:
     def black_opts(self) -> dict[str, Union[int, bool]]:
         # TODO:
         options = {
+            "line_length": DEFAULT_LINE_LENGTH,
             "fast": False,
             "is_pyi": self.nvim.current.buffer.name.endswith(".pyi"),
         }
@@ -57,6 +59,7 @@ class PyformatNvim:
 
         opts = self.black_opts()
         mode = black.Mode(
+            line_length=opts["line_length"],
             is_pyi=opts["is_pyi"],
         )
 
