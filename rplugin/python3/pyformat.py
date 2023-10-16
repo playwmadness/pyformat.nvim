@@ -1,4 +1,5 @@
 import sys
+from io import StringIO
 from typing import Union
 
 import pynvim
@@ -40,7 +41,6 @@ class PyformatNvim:
         self.nvim = nvim
 
     def black_opts(self) -> dict[str, Union[int, bool]]:
-        # TODO:
         options = {
             "line_length": DEFAULT_LINE_LENGTH,
             "fast": False,
@@ -52,8 +52,9 @@ class PyformatNvim:
         return options
 
     def isort_opts(self) -> dict[str, Union[int, bool]]:
-        # TODO:
-        options = {}
+        options = {
+            "is_pyi": self.nvim.current.buffer.name.endswith(".pyi"),
+        }
         user_options = self.nvim.vars.get("pyformat#isort#settings")
         if user_options:
             options.update(user_options)
@@ -79,7 +80,16 @@ class PyformatNvim:
         buf = "\n".join(self.nvim.current.buffer[range[0] - 1 : range[1]])
 
         opts = self.isort_opts()
-        buf = isort.code(buf)
+        isort_in = StringIO(buf)
+        isort_out = StringIO()
+        isorted = isort.api.sort_stream(
+            isort_in,
+            isort_out,
+            extension="pyi" if opts["is_pyi"] else "py",
+        )
+        if isorted:
+            isort_out.seek(0)
+            buf = isort_out.read()
 
         opts = self.black_opts()
         mode = black.Mode(
@@ -88,13 +98,11 @@ class PyformatNvim:
         )
 
         try:
-            buf = black.format_file_contents(
-                buf,
-                fast=opts["fast"],
-                mode=mode,
-            )
+            buf = black.format_file_contents(buf, fast=opts["fast"], mode=mode)
         except NothingChanged:
-            return
+            if not isorted:
+                self.nvim.out_write("Nothing changed\n")
+                return
         except InvalidInput:
             self.nvim.err_write("black: Invalid input\n")
             return
